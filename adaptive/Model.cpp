@@ -58,19 +58,7 @@ double blur::BlurScoreRQ(std::vector<std::vector<double>> pic)
 	int N = pic[0].size();
 	double sum = 0;
 
-	for (int i = 0; i < M; i++) //находим максимумы и минимумы
-	{
-		for (int j = 0; j < N; j++)
-		{
-			if (max < pic[i][j])
-				max = pic[i][j];
-
-			if (min > pic[i][j])
-				min = pic[i][j];
-		}
-	}
-
-	normirovka(pic, min, max); //нормировать на (0, 255)
+	normirovka(pic, max, min); //нормировать на (0, 255)
 
 	for (int i = 1; i < M; i++) //вычисление суммы в критерии (ссылка)
 	{
@@ -83,8 +71,20 @@ double blur::BlurScoreRQ(std::vector<std::vector<double>> pic)
 	return sum / ((M - 1) * (N - 1) * 0.5 * max);
 }
 
-void blur::normirovka(std::vector<std::vector<double>>& pic, double min, double max)
+void blur::normirovka(std::vector<std::vector<double>>& pic, double& max, double& min)
 {
+	for (int i = 0; i < pic.size(); i++) //находим максимумы и минимумы
+	{
+		for (int j = 0; j < pic[0].size(); j++)
+		{
+			if (max < pic[i][j])
+				max = pic[i][j];
+
+			if (min > pic[i][j])
+				min = pic[i][j];
+		}
+	}
+
 	if (max == 255 && min == 0) return;
 	for (int i = 0; i < pic.size(); i++)
 	{
@@ -173,23 +173,8 @@ double blur::BlurScoreC(std::vector<std::vector<double>> pic, int r_matr, double
 	int M = pic.size();
 	int N = pic[0].size();
 
-	for (int i = 0; i < M; i++)
-	{
-		for (int j = 0; j < N; j++)
-		{
-			if (max1 < blur1[i][j])
-				max1 = blur1[i][j];
-			if (max2 < blur2[i][j])
-				max2 = blur2[i][j];
-			if (min1 > blur1[i][j])
-				min1 = blur1[i][j];
-			if (min2 > blur2[i][j])
-				min2 = blur2[i][j];
-		}
-	}
-
-	normirovka(blur1, min1, max1);
-	normirovka(blur2, min2, max2);
+	normirovka(blur1, max1, min1);
+	normirovka(blur2, max2, min2);
 
 	double sum = 0;
 	for (int i = 0; i < M; i++)

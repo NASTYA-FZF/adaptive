@@ -33,7 +33,7 @@ public:
 	//рассчет оценки резкости
 	double BlurScoreRQ(std::vector<std::vector<double>> pic);
 	//нормировка (на случай когда вне интервала (0, 255))
-	void normirovka(std::vector<std::vector<double>>& pic, double min, double max);
+	void normirovka(std::vector<std::vector<double>>& pic, double& max, double& min);
 	//последовательность действий
 	void Main(std::vector<std::vector<double>> orig, int g_row_col, double sigma, double score_sig1, double score_sig2);
 	//свертка изображения с ядром
