@@ -17,7 +17,12 @@ void blur::SetBlur(std::vector<std::vector<double>> orig, int g_row_col, double 
 
 	CreateGauss(gauss, g_row_col, sigma);
 	
-	Convolution(orig, blur_pic, gauss, floor(g_row_col / 2));
+	Convolution(orig, blur_pic, gauss, floor(g_row_col / 2), b_type);
+}
+
+void blur::SetType(borderType my_type)
+{
+	b_type = my_type;
 }
 
 std::vector<std::vector<double>> blur::GetGauss()
@@ -50,7 +55,7 @@ double blur::GetScoreCBlur()
 	return score_blur_C;
 }
 
-double blur::BlurScoreRQ(std::vector<std::vector<double>> pic)
+double BlurScoreRQ(std::vector<std::vector<double>> pic)
 {
 	double max = 0;
 	double min = 0;
@@ -71,7 +76,7 @@ double blur::BlurScoreRQ(std::vector<std::vector<double>> pic)
 	return sum / ((M - 1) * (N - 1) * 0.5 * max);
 }
 
-void blur::normirovka(std::vector<std::vector<double>>& pic, double& max, double& min)
+void normirovka(std::vector<std::vector<double>>& pic, double& max, double& min)
 {
 	for (int i = 0; i < pic.size(); i++) //находим максимумы и минимумы
 	{
@@ -100,42 +105,69 @@ void blur::Main(std::vector<std::vector<double>> orig, int g_row_col, double sig
 	SetBlur(orig, g_row_col, sigma);
 	score_orig_RQ = BlurScoreRQ(orig);
 	score_blur_RQ = BlurScoreRQ(blur_pic);
-	score_orig_C = BlurScoreC(orig, g_row_col, score_sig1, score_sig2);
-	score_blur_C = BlurScoreC(blur_pic, g_row_col, score_sig1, score_sig2);
+	score_orig_C = BlurScoreC(orig, g_row_col, score_sig1, score_sig2, b_type);
+	score_blur_C = BlurScoreC(blur_pic, g_row_col, score_sig1, score_sig2, b_type);
 }
 
-void blur::Convolution(std::vector<std::vector<double>> orig, std::vector<std::vector<double>>& res, std::vector<std::vector<double>> my_h, int area_blur)
+std::vector<std::vector<double>> TwoMatrSum(std::vector<std::vector<double>> orig, std::vector<std::vector<double>> my_h, int max_row, int max_col, int area_blur, borderType b_type)
+{
+	vector<vector<double>> res(max_row, vector<double>(max_col));
+	switch (b_type)
+	{
+	case b_null:
+		for (int i = 0; i < max_row; i++) //свертка ориг. с гауссом
+		{
+			for (int j = 0; j < max_col; j++)
+			{
+				for (int k = -area_blur; k < area_blur; k++)
+				{
+					for (int h = -area_blur; h < area_blur; h++)
+					{
+						if (i - k >= 0 && j - h >= 0 && i - k < max_row && j - h < max_col)
+							res[i][j] += orig[i - k][j - h] * my_h[abs(k - area_blur)][abs(h - area_blur)];
+					}
+				}
+			}
+		} return res;
+	case b_repeat:
+		for (int i = 0; i < max_row; i++) //свертка ориг. с гауссом
+		{
+			for (int j = 0; j < max_col; j++)
+			{
+				for (int k = -area_blur; k < area_blur; k++)
+				{
+					for (int h = -area_blur; h < area_blur; h++)
+					{
+						if (i - k >= 0 && j - h >= 0 && i - k < max_row && j - h < max_col)
+							res[i][j] += orig[i - k][j - h] * my_h[abs(k - area_blur)][abs(h - area_blur)];
+						else
+							if ((i - k < 0 || i - k >= max_row) && (j - h < 0 || j - h >= max_col))
+								res[i][j] += orig[i][j] * my_h[abs(k - area_blur)][abs(h - area_blur)];
+							else
+								if (i - k < 0 || i - k >= max_row)
+									res[i][j] += orig[i][j - h] * my_h[abs(k - area_blur)][abs(h - area_blur)];
+								else
+									res[i][j] += orig[i - k][j] * my_h[abs(k - area_blur)][abs(h - area_blur)];
+					}
+				}
+			}
+		} return res;
+	case b_mirror:
+		break;
+	case b_loop:
+		break;
+	}
+	return res;
+}
+
+void Convolution(std::vector<std::vector<double>> orig, std::vector<std::vector<double>>& res, std::vector<std::vector<double>> my_h, int area_blur, borderType b_type)
 {
 	int max_row = orig.size();
 	int max_col = orig[0].size();
-	res.resize(max_row);
-	for (int i = 0; i < max_row; i++) //свертка ориг. с гауссом
-	{
-		res[i].resize(max_col);
-		for (int j = 0; j < max_col; j++)
-		{
-			for (int k = -area_blur; k < area_blur; k++)
-			{
-				for (int h = -area_blur; h < area_blur; h++)
-				{
-					if (i - k >= 0 && j - h >= 0 && i - k < max_row && j - h < max_col)
-						res[i][j] += orig[i - k][j - h] * my_h[abs(k - area_blur)][abs(h - area_blur)];
-					else
-						if ((i - k < 0 || i - k >= max_row) && (j - h < 0 || j - h >= max_col))
-							res[i][j] += orig[i][j] * my_h[abs(k - area_blur)][abs(h - area_blur)];
-						else
-							if (i - k < 0 || i - k >= max_row)
-								res[i][j] += orig[i][j - h] * my_h[abs(k - area_blur)][abs(h - area_blur)];
-							else
-								res[i][j] += orig[i - k][j] * my_h[abs(k - area_blur)][abs(h - area_blur)];
-
-				}
-			}
-		}
-	}
+	res = TwoMatrSum(orig, my_h, max_row, max_col, area_blur, b_type);
 }
 
-void blur::CreateGauss(std::vector<std::vector<double>>& pic, int r_matr, double sig)
+void CreateGauss(std::vector<std::vector<double>>& pic, int r_matr, double sig)
 {
 	pic.resize(r_matr);
 	int center_gauss = (int)floor(r_matr / 2);
@@ -150,7 +182,7 @@ void blur::CreateGauss(std::vector<std::vector<double>>& pic, int r_matr, double
 	}
 }
 
-double blur::BlurScoreC(std::vector<std::vector<double>> pic, int r_matr, double sig1, double sig2)
+double BlurScoreC(std::vector<std::vector<double>> pic, int r_matr, double sig1, double sig2, borderType b_type)
 {
 	if (sig1 > sig2)
 		swap(sig1, sig2);
@@ -162,8 +194,8 @@ double blur::BlurScoreC(std::vector<std::vector<double>> pic, int r_matr, double
 
 	CreateGauss(gauss1, r_matr, sig1);
 	CreateGauss(gauss2, r_matr, sig2);
-	Convolution(pic, blur1, gauss1, floor(r_matr / 2));
-	Convolution(pic, blur2, gauss2, floor(r_matr / 2));
+	Convolution(pic, blur1, gauss1, floor(r_matr / 2), b_type);
+	Convolution(pic, blur2, gauss2, floor(r_matr / 2), b_type);
 
 	double min1 = 0;
 	double min2 = 0;
@@ -186,4 +218,93 @@ double blur::BlurScoreC(std::vector<std::vector<double>> pic, int r_matr, double
 	}
 
 	return sum / (M * N);
+}
+
+void averagePower::CalcAvePower(std::vector<std::vector<double>> blur_pic, double part_max, double part_min) //Ќјѕ»—ј“№ √–јЌ ”—Ћќ¬»я „“ќЅџ –јЅќ“јЋќ
+{
+	int max_row = blur_pic.size();
+	int max_col = blur_pic[0].size();
+	maxPower = minPower = 0;
+	int ind_col = 0;
+
+	avePower.resize(max_row);
+	switch (b_type)
+	{
+	case b_null:
+		for (int i = 0; i < max_row; i++) //свертка ориг. с гауссом
+		{
+			avePower[i].resize(max_col);
+			for (int j = 0; j < max_col; j++)
+			{
+				for (int k = 0; k <= 2; k++)
+				{
+					for (int h = 0; h <= 4; h += 2)
+					{
+						if (j - h >= 0 && j - h < max_col)
+							if (i - k - 3 >= 0 && i - k - 3 < max_row)
+								avePower[i][j] += abs(blur_pic[i - k - 1][j - h] - 2 * blur_pic[i - k - 2][j - h] + blur_pic[i - k - 3][j - h]);
+							else
+								if (i - k - 2 >= 0 && i - k - 2 < max_row)
+									avePower[i][j] += abs(blur_pic[i - k - 1][j - h] - 2 * blur_pic[i - k - 2][j - h]);
+								else
+									if (i - k - 1 >= 0 && i - k - 1 < max_row)
+										avePower[i][j] += abs(blur_pic[i - k - 1][j - h]);
+					}
+				}
+				if (maxPower < avePower[i][j])
+					maxPower = avePower[i][j];
+				if (minPower > avePower[i][j])
+					minPower = avePower[i][j];
+			}
+		} break;
+	case b_repeat:
+		for (int i = 0; i < max_row; i++) //свертка ориг. с гауссом
+		{
+			avePower[i].resize(max_col);
+			for (int j = 0; j < max_col; j++)
+			{
+				for (int k = 0; k <= 2; k++)
+				{
+					for (int h = 0; h <= 4; h += 2)
+					{
+						if (j - h >= 0 && j - h < max_col)
+							ind_col = j - h;
+						else
+							ind_col = j;
+
+						if (i - k - 3 >= 0 && i - k - 3 < max_row)
+							avePower[i][j] += abs(blur_pic[i - k - 1][ind_col] - 2 * blur_pic[i - k - 2][ind_col] + blur_pic[i - k - 3][ind_col]);
+						else
+							if (i - k - 2 >= 0 && i - k - 2 < max_row)
+								avePower[i][j] += abs(blur_pic[i - k - 1][ind_col] - 2 * blur_pic[i - k - 2][ind_col] + blur_pic[i - k - 2][ind_col]);
+							else
+								if (i - k - 1 >= 0 && i - k - 1 < max_row)
+									avePower[i][j] += abs(blur_pic[i - k - 1][ind_col]);
+					}
+				}
+				if (maxPower < avePower[i][j])
+					maxPower = avePower[i][j];
+				if (minPower > avePower[i][j])
+					minPower = avePower[i][j];
+			}
+		} break;
+	case b_mirror:
+		break;
+	case b_loop:
+		break;
+	}
+
+	teta1 = part_min * minPower;
+	teta2 = part_max * maxPower;
+}
+
+void averagePower::SetType(borderType my_type)
+{
+	b_type = my_type;
+}
+
+void averagePower::SetTeta(double part_max, double part_min)
+{
+	teta1 = part_min * minPower;
+	teta2 = part_max * maxPower;
 }

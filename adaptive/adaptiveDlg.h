@@ -49,4 +49,12 @@ public:
 	CEdit textCBlur;
 	double sigma1;
 	double sigma2;
+	CButton rbNull;
+	CButton rbRepeat;
+	CButton rbMirror;
+	CButton rbLoop;
+	afx_msg void OnBnClickedRbrepeat();
+	afx_msg void OnBnClickedRbnull();
+	afx_msg void OnBnClickedRbmirror();
+	afx_msg void OnBnClickedRbloop();
 };

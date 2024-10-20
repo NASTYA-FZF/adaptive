@@ -41,6 +41,10 @@ void CadaptiveDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_EDIT8, textCBlur);
 	DDX_Text(pDX, IDC_EDIT3, sigma1);
 	DDX_Text(pDX, IDC_EDIT4, sigma2);
+	DDX_Control(pDX, IDC_RBNULL, rbNull);
+	DDX_Control(pDX, IDC_RBREPEAT, rbRepeat);
+	DDX_Control(pDX, IDC_RBMIRROR, rbMirror);
+	DDX_Control(pDX, IDC_RBLOOP, rbLoop);
 }
 
 BEGIN_MESSAGE_MAP(CadaptiveDlg, CDialogEx)
@@ -48,6 +52,10 @@ BEGIN_MESSAGE_MAP(CadaptiveDlg, CDialogEx)
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDC_LOAD_PIC, &CadaptiveDlg::OnBnClickedLoadPic)
 	ON_BN_CLICKED(IDOK, &CadaptiveDlg::OnBnClickedOk)
+	ON_BN_CLICKED(IDC_RBREPEAT, &CadaptiveDlg::OnBnClickedRbrepeat)
+	ON_BN_CLICKED(IDC_RBNULL, &CadaptiveDlg::OnBnClickedRbnull)
+	ON_BN_CLICKED(IDC_RBMIRROR, &CadaptiveDlg::OnBnClickedRbmirror)
+	ON_BN_CLICKED(IDC_RBLOOP, &CadaptiveDlg::OnBnClickedRbloop)
 END_MESSAGE_MAP()
 
 
@@ -62,6 +70,11 @@ BOOL CadaptiveDlg::OnInitDialog()
 	SetIcon(m_hIcon, TRUE);			// Крупный значок
 	SetIcon(m_hIcon, FALSE);		// Мелкий значок
 
+	rbNull.SetCheck(BST_UNCHECKED);
+	rbRepeat.SetCheck(BST_CHECKED);
+	rbMirror.SetCheck(BST_UNCHECKED);
+	rbLoop.SetCheck(BST_UNCHECKED);
+	matr_blur.SetType(b_repeat);
 	// TODO: добавьте дополнительную инициализацию
 
 	return TRUE;  // возврат значения TRUE, если фокус не передан элементу управления
@@ -140,4 +153,48 @@ CString CadaptiveDlg::text_value(double val)
 	CString str;
 	str.Format(L"%.4f", val);
 	return str;
+}
+
+
+void CadaptiveDlg::OnBnClickedRbrepeat()
+{
+	// TODO: добавьте свой код обработчика уведомлений
+	rbNull.SetCheck(BST_UNCHECKED);
+	rbRepeat.SetCheck(BST_CHECKED);
+	rbMirror.SetCheck(BST_UNCHECKED);
+	rbLoop.SetCheck(BST_UNCHECKED);
+	matr_blur.SetType(b_repeat);
+}
+
+
+void CadaptiveDlg::OnBnClickedRbnull()
+{
+	// TODO: добавьте свой код обработчика уведомлений
+	rbNull.SetCheck(BST_CHECKED);
+	rbRepeat.SetCheck(BST_UNCHECKED);
+	rbMirror.SetCheck(BST_UNCHECKED);
+	rbLoop.SetCheck(BST_UNCHECKED);
+	matr_blur.SetType(b_null);
+}
+
+
+void CadaptiveDlg::OnBnClickedRbmirror()
+{
+	// TODO: добавьте свой код обработчика уведомлений
+	rbNull.SetCheck(BST_UNCHECKED);
+	rbRepeat.SetCheck(BST_UNCHECKED);
+	rbMirror.SetCheck(BST_CHECKED);
+	rbLoop.SetCheck(BST_UNCHECKED);
+	matr_blur.SetType(b_mirror);
+}
+
+
+void CadaptiveDlg::OnBnClickedRbloop()
+{
+	// TODO: добавьте свой код обработчика уведомлений
+	rbNull.SetCheck(BST_UNCHECKED);
+	rbRepeat.SetCheck(BST_UNCHECKED);
+	rbMirror.SetCheck(BST_UNCHECKED);
+	rbLoop.SetCheck(BST_CHECKED);
+	matr_blur.SetType(b_loop);
 }
