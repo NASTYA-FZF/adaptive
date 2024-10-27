@@ -17,7 +17,7 @@ void blur::SetBlur(std::vector<std::vector<double>> orig, int g_row_col, double 
 
 	CreateGauss(gauss, g_row_col, sigma);
 	
-	Convolution(orig, blur_pic, gauss, floor(g_row_col / 2));
+	Convolution(orig_pic, blur_pic, gauss, floor(g_row_col / 2));
 }
 
 std::vector<std::vector<double>> blur::GetGauss()
@@ -97,17 +97,20 @@ void blur::normirovka(std::vector<std::vector<double>>& pic, double& max, double
 
 void blur::Main(std::vector<std::vector<double>> orig, int g_row_col, double sigma, double score_sig1, double score_sig2)
 {
+	CreateFullOrig(orig, orig_pic, g_row_col);
 	SetBlur(orig, g_row_col, sigma);
 	score_orig_RQ = BlurScoreRQ(orig);
 	score_blur_RQ = BlurScoreRQ(blur_pic);
-	score_orig_C = BlurScoreC(orig, g_row_col, score_sig1, score_sig2);
-	score_blur_C = BlurScoreC(blur_pic, g_row_col, score_sig1, score_sig2);
+	score_orig_C = BlurScoreC(orig_pic, g_row_col, score_sig1, score_sig2);
+	vector<vector<double>> full_blur_pic;
+	CreateFullOrig(blur_pic, full_blur_pic, g_row_col);
+	score_blur_C = BlurScoreC(full_blur_pic, g_row_col, score_sig1, score_sig2);
 }
 
 void blur::Convolution(std::vector<std::vector<double>> orig, std::vector<std::vector<double>>& res, std::vector<std::vector<double>> my_h, int area_blur)
 {
-	int max_row = orig.size();
-	int max_col = orig[0].size();
+	int max_row = orig.size() - 2 * area_blur;
+	int max_col = orig[0].size() - 2 * area_blur;
 	res.resize(max_row);
 	for (int i = 0; i < max_row; i++) //свертка ориг. с гауссом
 	{
@@ -118,7 +121,8 @@ void blur::Convolution(std::vector<std::vector<double>> orig, std::vector<std::v
 			{
 				for (int h = -area_blur; h < area_blur; h++)
 				{
-					if (i - k >= 0 && j - h >= 0 && i - k < max_row && j - h < max_col)
+					res[i][j] += orig[i + area_blur - k][j + area_blur - h] * my_h[abs(k - area_blur)][abs(h - area_blur)];
+					/*if (i - k >= 0 && j - h >= 0 && i - k < max_row && j - h < max_col)
 						res[i][j] += orig[i - k][j - h] * my_h[abs(k - area_blur)][abs(h - area_blur)];
 					else
 						if ((i - k < 0 || i - k >= max_row) && (j - h < 0 || j - h >= max_col))
@@ -127,7 +131,7 @@ void blur::Convolution(std::vector<std::vector<double>> orig, std::vector<std::v
 							if (i - k < 0 || i - k >= max_row)
 								res[i][j] += orig[i][j - h] * my_h[abs(k - area_blur)][abs(h - area_blur)];
 							else
-								res[i][j] += orig[i - k][j] * my_h[abs(k - area_blur)][abs(h - area_blur)];
+								res[i][j] += orig[i - k][j] * my_h[abs(k - area_blur)][abs(h - area_blur)];*/
 
 				}
 			}
@@ -170,8 +174,8 @@ double blur::BlurScoreC(std::vector<std::vector<double>> pic, int r_matr, double
 	double max1 = 0;
 	double max2 = 0;
 
-	int M = pic.size();
-	int N = pic[0].size();
+	int M = pic.size() - (r_matr - 1);
+	int N = pic[0].size() - (r_matr - 1);
 
 	normirovka(blur1, max1, min1);
 	normirovka(blur2, max2, min2);
@@ -186,4 +190,45 @@ double blur::BlurScoreC(std::vector<std::vector<double>> pic, int r_matr, double
 	}
 
 	return sum / (M * N);
+}
+
+void blur::CreateFullOrig(std::vector<std::vector<double>> orig, std::vector<std::vector<double>>& res, int g_row_col)
+{
+	int size_orig_row = orig.size();
+	int size_orig_col = orig[0].size();
+	int polovina = (int)floor(g_row_col / 2);
+	int size_orig_pic_row = size_orig_row + 2 * polovina;
+	int size_orig_pic_col = size_orig_col + 2 * polovina;
+	res.resize(size_orig_pic_row);
+
+	for (int i = 0; i < size_orig_pic_row; i++)
+	{
+		res[i].resize(size_orig_pic_col);
+
+		if (i >= polovina && i < size_orig_pic_row - polovina)
+			copy(orig[i - polovina].begin(), orig[i - polovina].end(), res[i].begin() + polovina);
+		else
+		{
+			for (int j = 0; j < size_orig_pic_col; j++)
+			{
+				if (j >= polovina || j < size_orig_pic_col - polovina)
+				{
+					if (i < polovina)
+						copy(orig[0].begin(), orig[i - polovina].end(), res[i].begin() + polovina);
+				}
+				if (i < polovina && j < polovina)
+					res[i][j] = orig[0][0];
+				else
+					if (i < polovina && j >= size_orig_pic_col - polovina)
+						res[i][j] = orig[0].back();
+					else
+						if (i >= size_orig_pic_row - polovina && j < polovina)
+							res[i][j] = orig.back()[0];
+						else
+							if (i >= size_orig_pic_row - polovina && j >= size_orig_pic_col - polovina)
+								res[i][j] = orig.back().back();
+
+			}
+		}
+	}
 }

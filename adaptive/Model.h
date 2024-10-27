@@ -1,10 +1,13 @@
 #pragma once
 #include <vector>
+#include <algorithm>
 
 //https://www.researchgate.net/publication/327727402_Mera_ocenki_rezkosti_cifrovogo_izobrazenia ссылка на критерии резкости (размытости)
 
 class blur
 {
+	//исходное изображение с гу (повторение краевых пикселей)
+	std::vector<std::vector<double>> orig_pic;
 	//размытое изображение
 	std::vector<std::vector<double>> blur_pic;
 	//гаусс, с которым сворачиваем
@@ -42,4 +45,6 @@ public:
 	void CreateGauss(std::vector<std::vector<double>>& pic, int r_matr, double sig);
 	//рассчет оценки резкости по 2 размытиям
 	double BlurScoreC(std::vector<std::vector<double>> pic, int r_matr, double sig1, double sig2);
+	//создание изображения с гу
+	void CreateFullOrig(std::vector<std::vector<double>> orig, std::vector<std::vector<double>>& res, int g_row_col);
 };
