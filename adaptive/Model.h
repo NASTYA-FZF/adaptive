@@ -1,8 +1,11 @@
 #pragma once
 #include <vector>
 #include <algorithm>
+#include <numeric>
 
 //https://www.researchgate.net/publication/327727402_Mera_ocenki_rezkosti_cifrovogo_izobrazenia ссылка на критерии резкости (размытости)
+
+const int max_razm = 7;
 
 class blur
 {
@@ -10,6 +13,8 @@ class blur
 	std::vector<std::vector<double>> orig_pic;
 	//размытое изображение
 	std::vector<std::vector<double>> blur_pic;
+	//размытое изображение с гу
+	std::vector<std::vector<double>> blur_pic_cond;
 	//гаусс, с которым сворачиваем
 	std::vector<std::vector<double>> gauss;
 	//критерий для ориг. изображения

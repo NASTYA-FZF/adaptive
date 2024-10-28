@@ -102,38 +102,30 @@ void blur::Main(std::vector<std::vector<double>> orig, int g_row_col, double sig
 	score_orig_RQ = BlurScoreRQ(orig);
 	score_blur_RQ = BlurScoreRQ(blur_pic);
 	score_orig_C = BlurScoreC(orig_pic, g_row_col, score_sig1, score_sig2);
-	vector<vector<double>> full_blur_pic;
-	CreateFullOrig(blur_pic, full_blur_pic, g_row_col);
-	score_blur_C = BlurScoreC(full_blur_pic, g_row_col, score_sig1, score_sig2);
+	if (g_row_col < max_razm)
+		CreateFullOrig(blur_pic, blur_pic_cond, max_razm);
+	else
+		CreateFullOrig(blur_pic, blur_pic_cond, g_row_col);
+	score_blur_C = BlurScoreC(blur_pic_cond, g_row_col, score_sig1, score_sig2);
 }
 
 void blur::Convolution(std::vector<std::vector<double>> orig, std::vector<std::vector<double>>& res, std::vector<std::vector<double>> my_h, int area_blur)
 {
 	int max_row = orig.size() - 2 * area_blur;
 	int max_col = orig[0].size() - 2 * area_blur;
+	int max_h = 2 * area_blur + 1;
 	res.resize(max_row);
+
+	vector<double> first(max_h);
+	vector<double> second(max_h);
 	for (int i = 0; i < max_row; i++) //свертка ориг. с гауссом
 	{
 		res[i].resize(max_col);
 		for (int j = 0; j < max_col; j++)
 		{
-			for (int k = -area_blur; k < area_blur; k++)
+			for (int k = 0; k < max_h; k++)
 			{
-				for (int h = -area_blur; h < area_blur; h++)
-				{
-					res[i][j] += orig[i + area_blur - k][j + area_blur - h] * my_h[abs(k - area_blur)][abs(h - area_blur)];
-					/*if (i - k >= 0 && j - h >= 0 && i - k < max_row && j - h < max_col)
-						res[i][j] += orig[i - k][j - h] * my_h[abs(k - area_blur)][abs(h - area_blur)];
-					else
-						if ((i - k < 0 || i - k >= max_row) && (j - h < 0 || j - h >= max_col))
-							res[i][j] += orig[i][j] * my_h[abs(k - area_blur)][abs(h - area_blur)];
-						else
-							if (i - k < 0 || i - k >= max_row)
-								res[i][j] += orig[i][j - h] * my_h[abs(k - area_blur)][abs(h - area_blur)];
-							else
-								res[i][j] += orig[i - k][j] * my_h[abs(k - area_blur)][abs(h - area_blur)];*/
-
-				}
+				res[i][j] = inner_product(orig[i + k].begin() + j, orig[i + k].begin() + j + max_h, my_h[k].begin(), 0.); //произведение векторов
 			}
 		}
 	}
@@ -206,27 +198,46 @@ void blur::CreateFullOrig(std::vector<std::vector<double>> orig, std::vector<std
 		res[i].resize(size_orig_pic_col);
 
 		if (i >= polovina && i < size_orig_pic_row - polovina)
-			copy(orig[i - polovina].begin(), orig[i - polovina].end(), res[i].begin() + polovina);
+		{
+			for (int j = 0; j < size_orig_pic_col; j++)
+			{
+				if (j >= polovina && j < size_orig_pic_col - polovina)
+				{
+					copy(orig[i - polovina].begin(), orig[i - polovina].end(), res[i].begin() + polovina); //копируем исх. изображение
+					j = size_orig_pic_col - polovina - 1;
+				}
+				else
+					if (j < polovina)
+						res[i][j] = orig[i - polovina][0]; //гу левая сторона
+					else
+						if (j >= size_orig_pic_col - polovina)
+							res[i][j] = orig[i - polovina].back(); //гу правая сторона
+			}
+		}
 		else
 		{
 			for (int j = 0; j < size_orig_pic_col; j++)
 			{
-				if (j >= polovina || j < size_orig_pic_col - polovina)
+				if (j >= polovina && j < size_orig_pic_col - polovina)
 				{
 					if (i < polovina)
-						copy(orig[0].begin(), orig[i - polovina].end(), res[i].begin() + polovina);
+						copy(orig[0].begin(), orig[0].end(), res[i].begin() + polovina); //гу верхние
+					else
+						copy(orig.back().begin(), orig.back().end(), res[i].begin() + polovina); //гу нижние
+					j = size_orig_pic_col - polovina - 1;
 				}
-				if (i < polovina && j < polovina)
-					res[i][j] = orig[0][0];
+				else
+					if (i < polovina && j < polovina)
+					res[i][j] = orig[0][0]; //гу левый верхний угол
 				else
 					if (i < polovina && j >= size_orig_pic_col - polovina)
-						res[i][j] = orig[0].back();
+						res[i][j] = orig[0].back(); //гу правый верхний угол
 					else
 						if (i >= size_orig_pic_row - polovina && j < polovina)
-							res[i][j] = orig.back()[0];
+							res[i][j] = orig.back()[0]; //гу нижний левый угол
 						else
 							if (i >= size_orig_pic_row - polovina && j >= size_orig_pic_col - polovina)
-								res[i][j] = orig.back().back();
+								res[i][j] = orig.back().back(); //гу нижний правый угол
 
 			}
 		}
