@@ -248,3 +248,87 @@ void blur::CreateFullOrig(std::vector<std::vector<double>> orig, std::vector<std
 		}
 	}
 }
+
+std::vector<std::vector<double>> blur::GetBlurCond()
+{
+	return blur_pic_cond;
+}
+
+void parametr::CalcParam(std::vector<std::vector<double>> blur_pic)
+{
+	int max_row = blur_pic.size() - 2 * num_first_pic;
+	int max_col = blur_pic[0].size() - 2 * num_first_pic;
+	double um1 = 0;
+	double um2 = 0;
+	double um3 = 0;
+	maxP = 0;
+	minP = 0;
+	param.resize(max_row);
+
+	for (int i = 0; i < max_row; i++)
+	{
+		param[i].resize(max_col);
+		for (int j = 0; j < max_col; j++)
+		{
+			for (int k = 0; k < 3; k++)
+			{
+				for (int h = 0; h < 5; h += 2)
+				{
+					um1 = blur_pic[i + num_first_pic - k - 1][j + num_first_pic - h];
+					um2 = blur_pic[i + num_first_pic - k - 2][j + num_first_pic - h];
+					um3 = blur_pic[i + num_first_pic - k - 3][j + num_first_pic - h];
+					param[i][j] += abs(um1 - 2. * um2 + um3);
+				}
+			}
+			param[i][j] /= 9;
+
+			if (maxP < param[i][j])
+				maxP = param[i][j];
+			else
+				if (minP > param[i][j])
+					minP = param[i][j];
+		}
+	}
+}
+
+void parametr::Main(std::vector<std::vector<double>> picture, double part_max, double part_min, int pixel_cond)
+{
+	if (!param.empty())
+		param.clear();
+
+	num_first_pic = pixel_cond;
+
+	CalcParam(picture);
+	SetTeta(part_max, part_min);
+}
+
+void parametr::SetTeta(double part_max, double part_min)
+{
+	teta1 = part_min * maxP;
+	teta2 = part_max * maxP;
+}
+
+std::vector<std::vector<double>> parametr::GetParam()
+{
+	return param;
+}
+
+double parametr::GetMax()
+{
+	return maxP;
+}
+
+double parametr::GetMin()
+{
+	return minP;
+}
+
+double parametr::GetTeta1()
+{
+	return teta1;
+}
+
+double parametr::GetTeta2()
+{
+	return teta2;
+}

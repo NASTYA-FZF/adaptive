@@ -23,6 +23,8 @@ CadaptiveDlg::CadaptiveDlg(CWnd* pParent /*=nullptr*/)
 	, sigma(5)
 	, sigma1(1)
 	, sigma2(3)
+	, part_min(0.2)
+	, part_max(0.8)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -41,6 +43,10 @@ void CadaptiveDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_EDIT8, textCBlur);
 	DDX_Text(pDX, IDC_EDIT3, sigma1);
 	DDX_Text(pDX, IDC_EDIT4, sigma2);
+	DDX_Text(pDX, IDC_EDIT10, part_min);
+	DDX_Text(pDX, IDC_EDIT9, part_max);
+	DDX_Control(pDX, IDC_PARAM, pic_param);
+	DDX_Control(pDX, IDC_SCALE_PARAM, scaleParam);
 }
 
 BEGIN_MESSAGE_MAP(CadaptiveDlg, CDialogEx)
@@ -48,6 +54,7 @@ BEGIN_MESSAGE_MAP(CadaptiveDlg, CDialogEx)
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDC_LOAD_PIC, &CadaptiveDlg::OnBnClickedLoadPic)
 	ON_BN_CLICKED(IDOK, &CadaptiveDlg::OnBnClickedOk)
+	ON_BN_CLICKED(IDC_CHANGETETA, &CadaptiveDlg::OnBnClickedChangeteta)
 END_MESSAGE_MAP()
 
 
@@ -127,11 +134,14 @@ void CadaptiveDlg::OnBnClickedOk()
 
 	UpdateData();
 	matr_blur.Main(pic_original.GetMatr(), r_gauss, sigma, sigma1, sigma2);
+	my_param.Main(matr_blur.GetBlurCond(), part_max, part_min, matr_blur.num_first_pic);
 	textRQBlur.SetWindowTextW(text_value(matr_blur.GetScoreRQBlur()));
 	textRQOrig.SetWindowTextW(text_value(matr_blur.GetScoreRQOrig()));
 	textCOrig.SetWindowTextW(text_value(matr_blur.GetScoreCOrig()));
 	textCBlur.SetWindowTextW(text_value(matr_blur.GetScoreCBlur()));
 	pic_blur.SetMatr(matr_blur.GetBlur(), 0, 0, 0, false);
+	pic_param.SetMatr(my_param.GetParam(), 0, 0, 0, false);
+	scaleParam.SetParam(my_param.GetMax(), my_param.GetMin(), my_param.GetTeta1(), my_param.GetTeta2(), my_param.GetParam());
 	Invalidate(FALSE);
 }
 
@@ -140,4 +150,14 @@ CString CadaptiveDlg::text_value(double val)
 	CString str;
 	str.Format(L"%.4f", val);
 	return str;
+}
+
+
+void CadaptiveDlg::OnBnClickedChangeteta()
+{
+	// TODO: добавьте свой код обработчика уведомлений
+	UpdateData();
+	my_param.SetTeta(part_max, part_min);
+	scaleParam.SetParam(my_param.GetMax(), my_param.GetMin(), my_param.GetTeta1(), my_param.GetTeta2(), my_param.GetParam());
+	Invalidate(FALSE);
 }

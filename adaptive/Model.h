@@ -5,7 +5,7 @@
 
 //https://www.researchgate.net/publication/327727402_Mera_ocenki_rezkosti_cifrovogo_izobrazenia ссылка на критерии резкости (размытости)
 
-const int max_razm = 7;
+const int max_razm = 10;
 
 class blur
 {
@@ -53,4 +53,35 @@ public:
 	double BlurScoreC(std::vector<std::vector<double>> pic, int r_matr, double sig1, double sig2);
 	//создание изображения с гу
 	void CreateFullOrig(std::vector<std::vector<double>> orig, std::vector<std::vector<double>>& res, int g_row_col);
+
+	std::vector<std::vector<double>> GetBlurCond();
+};
+
+class parametr
+{
+	std::vector<std::vector<double>> blur_pic;
+	std::vector<std::vector<double>> param;
+	double teta1;
+	double teta2;
+	double maxP;
+	double minP;
+
+public:
+	int num_first_pic;
+
+	void CalcParam(std::vector<std::vector<double>> blur_pic);
+
+	void Main(std::vector<std::vector<double>> picture, double part_max, double part_min, int pixel_cond);
+
+	void SetTeta(double part_max, double part_min);
+
+	std::vector<std::vector<double>> GetParam();
+
+	double GetMax();
+
+	double GetMin();
+
+	double GetTeta1();
+
+	double GetTeta2();
 };

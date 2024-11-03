@@ -5,6 +5,7 @@
 #pragma once
 #include "Drawer.h"
 #include "Model.h"
+#include "DrawParam.h"
 #include <string>
 
 // Диалоговое окно CadaptiveDlg
@@ -49,4 +50,11 @@ public:
 	CEdit textCBlur;
 	double sigma1;
 	double sigma2;
+
+	parametr my_param;
+	double part_min;
+	double part_max;
+	Drawer pic_param;
+	DrawParam scaleParam;
+	afx_msg void OnBnClickedChangeteta();
 };
