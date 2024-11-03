@@ -25,8 +25,9 @@ class blur
 	double score_blur_C;
 
 public:
+	int num_first_pic;
 	//создание размытого изображения
-	void SetBlur(std::vector<std::vector<double>> orig, int g_row_col, double sigma);
+	void SetBlur(int g_row_col, double sigma);
 
 	//получение гаусса
 	std::vector<std::vector<double>> GetGauss();

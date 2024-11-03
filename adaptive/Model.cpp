@@ -4,7 +4,7 @@
 #include "Model.h"
 using namespace std;
 
-void blur::SetBlur(std::vector<std::vector<double>> orig, int g_row_col, double sigma)
+void blur::SetBlur(int g_row_col, double sigma)
 {
 	if (g_row_col % 2 == 0) //ядро должно быть по размерам нечетное
 	{
@@ -98,12 +98,16 @@ void blur::normirovka(std::vector<std::vector<double>>& pic, double& max, double
 void blur::Main(std::vector<std::vector<double>> orig, int g_row_col, double sigma, double score_sig1, double score_sig2)
 {
 	CreateFullOrig(orig, orig_pic, g_row_col);
-	SetBlur(orig, g_row_col, sigma);
+	num_first_pic = (int)floor(g_row_col / 2);
+	SetBlur(g_row_col, sigma);
 	score_orig_RQ = BlurScoreRQ(orig);
 	score_blur_RQ = BlurScoreRQ(blur_pic);
 	score_orig_C = BlurScoreC(orig_pic, g_row_col, score_sig1, score_sig2);
 	if (g_row_col < max_razm)
+	{
 		CreateFullOrig(blur_pic, blur_pic_cond, max_razm);
+		num_first_pic = 3;
+	}
 	else
 		CreateFullOrig(blur_pic, blur_pic_cond, g_row_col);
 	score_blur_C = BlurScoreC(blur_pic_cond, g_row_col, score_sig1, score_sig2);
@@ -111,8 +115,8 @@ void blur::Main(std::vector<std::vector<double>> orig, int g_row_col, double sig
 
 void blur::Convolution(std::vector<std::vector<double>> orig, std::vector<std::vector<double>>& res, std::vector<std::vector<double>> my_h, int area_blur)
 {
-	int max_row = orig.size() - 2 * area_blur;
-	int max_col = orig[0].size() - 2 * area_blur;
+	int max_row = orig.size() - 2 * num_first_pic;
+	int max_col = orig[0].size() - 2 * num_first_pic;
 	int max_h = 2 * area_blur + 1;
 	res.resize(max_row);
 
@@ -123,9 +127,10 @@ void blur::Convolution(std::vector<std::vector<double>> orig, std::vector<std::v
 		res[i].resize(max_col);
 		for (int j = 0; j < max_col; j++)
 		{
-			for (int k = 0; k < max_h; k++)
+			for (int k = -area_blur; k < area_blur; k++)
 			{
-				res[i][j] = inner_product(orig[i + k].begin() + j, orig[i + k].begin() + j + max_h, my_h[k].begin(), 0.); //произведение векторов
+				//res[i][j] = inner_product(orig[i + k].begin() + j, orig[i + k].begin() + j + max_h, my_h[k].begin(), 0.); //произведение векторов
+				res[i][j] = inner_product(orig[i + num_first_pic + k].begin() + j + num_first_pic - area_blur, orig[i + num_first_pic + k].begin() + j + num_first_pic - area_blur + max_h, my_h[k + area_blur].begin(), 0.); //произведение векторов
 			}
 		}
 	}
