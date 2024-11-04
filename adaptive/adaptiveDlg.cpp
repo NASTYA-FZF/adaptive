@@ -47,6 +47,8 @@ void CadaptiveDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT9, part_max);
 	DDX_Control(pDX, IDC_PARAM, pic_param);
 	DDX_Control(pDX, IDC_SCALE_PARAM, scaleParam);
+	DDX_Control(pDX, IDC_EDIT11, textCFilter);
+	DDX_Control(pDX, IDC_EDIT12, textRQFilter);
 }
 
 BEGIN_MESSAGE_MAP(CadaptiveDlg, CDialogEx)
@@ -55,6 +57,7 @@ BEGIN_MESSAGE_MAP(CadaptiveDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_LOAD_PIC, &CadaptiveDlg::OnBnClickedLoadPic)
 	ON_BN_CLICKED(IDOK, &CadaptiveDlg::OnBnClickedOk)
 	ON_BN_CLICKED(IDC_CHANGETETA, &CadaptiveDlg::OnBnClickedChangeteta)
+	ON_BN_CLICKED(IDC_BFILTER, &CadaptiveDlg::OnBnClickedBfilter)
 END_MESSAGE_MAP()
 
 
@@ -159,5 +162,17 @@ void CadaptiveDlg::OnBnClickedChangeteta()
 	UpdateData();
 	my_param.SetTeta(part_max, part_min);
 	scaleParam.SetParam(my_param.GetMax(), my_param.GetMin(), my_param.GetTeta1(), my_param.GetTeta2(), my_param.GetParam());
-	Invalidate(FALSE);
+	scaleParam.Invalidate(FALSE);
+}
+
+
+void CadaptiveDlg::OnBnClickedBfilter()
+{
+	// TODO: добавьте свой код обработчика уведомлений
+	UpdateData();
+	filter_blur.Main(matr_blur.GetBlurCond(), my_param.GetTeta1(), my_param.GetTeta2(), my_param.GetParam(), my_param.num_first_pic, r_gauss, sigma1, sigma2);
+	pic_filter.SetMatr(filter_blur.GetResPic(), 0, 0, 0, false);
+	pic_filter.Invalidate(FALSE);
+	textRQFilter.SetWindowTextW(text_value(filter_blur.GetRQ()));
+	textCFilter.SetWindowTextW(text_value(filter_blur.GetC()));
 }

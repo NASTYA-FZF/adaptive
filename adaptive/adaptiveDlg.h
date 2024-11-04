@@ -57,4 +57,9 @@ public:
 	Drawer pic_param;
 	DrawParam scaleParam;
 	afx_msg void OnBnClickedChangeteta();
+	afx_msg void OnBnClickedBfilter();
+
+	filter filter_blur;
+	CEdit textCFilter;
+	CEdit textRQFilter;
 };

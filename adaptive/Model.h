@@ -39,23 +39,24 @@ public:
 	double GetScoreCOrig();
 	double GetScoreCBlur();
 
-	//рассчет оценки резкости
-	double BlurScoreRQ(std::vector<std::vector<double>> pic);
-	//нормировка (на случай когда вне интервала (0, 255))
-	void normirovka(std::vector<std::vector<double>>& pic, double& max, double& min);
 	//последовательность действий
 	void Main(std::vector<std::vector<double>> orig, int g_row_col, double sigma, double score_sig1, double score_sig2);
-	//свертка изображения с ядром
-	void Convolution(std::vector<std::vector<double>> orig, std::vector<std::vector<double>>& res, std::vector<std::vector<double>> my_h, int area_blur);
-	//рассчет гауссиана
-	void CreateGauss(std::vector<std::vector<double>>& pic, int r_matr, double sig);
-	//рассчет оценки резкости по 2 размытиям
-	double BlurScoreC(std::vector<std::vector<double>> pic, int r_matr, double sig1, double sig2);
-	//создание изображения с гу
-	void CreateFullOrig(std::vector<std::vector<double>> orig, std::vector<std::vector<double>>& res, int g_row_col);
 
 	std::vector<std::vector<double>> GetBlurCond();
 };
+
+//рассчет оценки резкости
+double BlurScoreRQ(std::vector<std::vector<double>> pic);
+//нормировка (на случай когда вне интервала (0, 255))
+void normirovka(std::vector<std::vector<double>>& pic, double& max, double& min);
+//свертка изображения с ядром
+void Convolution(std::vector<std::vector<double>> orig, std::vector<std::vector<double>>& res, std::vector<std::vector<double>> my_h, int area_blur, double num_first_pic);
+//рассчет гауссиана
+void CreateGauss(std::vector<std::vector<double>>& pic, int r_matr, double sig);
+//рассчет оценки резкости по 2 размытиям
+double BlurScoreC(std::vector<std::vector<double>> pic, int r_matr, double sig1, double sig2, double num_first_pic);
+//создание изображения с гу
+void CreateFullOrig(std::vector<std::vector<double>> orig, std::vector<std::vector<double>>& res, int g_row_col, int& num_first_pic);
 
 class parametr
 {
@@ -84,4 +85,26 @@ public:
 	double GetTeta1();
 
 	double GetTeta2();
+};
+
+class filter
+{
+	std::vector<std::vector<double>> res_pic;
+	std::vector<std::vector<std::vector<double>>> h;
+	int num_first_pic;
+	double scoreRQfilter;
+	double scoreCfilter;
+
+public:
+	void CalcResult(std::vector<std::vector<double>> blur_pic);
+
+	void CalcH(double teta1, double teta2, std::vector<std::vector<double>> param);
+
+	void Main(std::vector<std::vector<double>> blur_pic, double teta1, double teta2, std::vector<std::vector<double>> param, double first_pixel, int g_row_col, double s1, double s2);
+
+	std::vector<std::vector<double>> GetResPic();
+
+	double GetRQ();
+
+	double GetC();
 };

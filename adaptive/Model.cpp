@@ -17,7 +17,7 @@ void blur::SetBlur(int g_row_col, double sigma)
 
 	CreateGauss(gauss, g_row_col, sigma);
 	
-	Convolution(orig_pic, blur_pic, gauss, floor(g_row_col / 2));
+	Convolution(orig_pic, blur_pic, gauss, floor(g_row_col / 2), num_first_pic);
 }
 
 std::vector<std::vector<double>> blur::GetGauss()
@@ -50,7 +50,7 @@ double blur::GetScoreCBlur()
 	return score_blur_C;
 }
 
-double blur::BlurScoreRQ(std::vector<std::vector<double>> pic)
+double BlurScoreRQ(std::vector<std::vector<double>> pic)
 {
 	double max = 0;
 	double min = 0;
@@ -71,7 +71,7 @@ double blur::BlurScoreRQ(std::vector<std::vector<double>> pic)
 	return sum / ((M - 1) * (N - 1) * 0.5 * max);
 }
 
-void blur::normirovka(std::vector<std::vector<double>>& pic, double& max, double& min)
+void normirovka(std::vector<std::vector<double>>& pic, double& max, double& min)
 {
 	for (int i = 0; i < pic.size(); i++) //находим максимумы и минимумы
 	{
@@ -97,23 +97,23 @@ void blur::normirovka(std::vector<std::vector<double>>& pic, double& max, double
 
 void blur::Main(std::vector<std::vector<double>> orig, int g_row_col, double sigma, double score_sig1, double score_sig2)
 {
-	CreateFullOrig(orig, orig_pic, g_row_col);
+	CreateFullOrig(orig, orig_pic, g_row_col, num_first_pic);
 	num_first_pic = (int)floor(g_row_col / 2);
 	SetBlur(g_row_col, sigma);
 	score_orig_RQ = BlurScoreRQ(orig);
 	score_blur_RQ = BlurScoreRQ(blur_pic);
-	score_orig_C = BlurScoreC(orig_pic, g_row_col, score_sig1, score_sig2);
+	score_orig_C = BlurScoreC(orig_pic, g_row_col, score_sig1, score_sig2, num_first_pic);
 	if (g_row_col < max_razm)
 	{
-		CreateFullOrig(blur_pic, blur_pic_cond, max_razm);
+		CreateFullOrig(blur_pic, blur_pic_cond, max_razm, num_first_pic);
 		num_first_pic = 3;
 	}
 	else
-		CreateFullOrig(blur_pic, blur_pic_cond, g_row_col);
-	score_blur_C = BlurScoreC(blur_pic_cond, g_row_col, score_sig1, score_sig2);
+		CreateFullOrig(blur_pic, blur_pic_cond, g_row_col, num_first_pic);
+	score_blur_C = BlurScoreC(blur_pic_cond, g_row_col, score_sig1, score_sig2, num_first_pic);
 }
 
-void blur::Convolution(std::vector<std::vector<double>> orig, std::vector<std::vector<double>>& res, std::vector<std::vector<double>> my_h, int area_blur)
+void Convolution(std::vector<std::vector<double>> orig, std::vector<std::vector<double>>& res, std::vector<std::vector<double>> my_h, int area_blur, double num_first_pic)
 {
 	int max_row = orig.size() - 2 * num_first_pic;
 	int max_col = orig[0].size() - 2 * num_first_pic;
@@ -136,7 +136,7 @@ void blur::Convolution(std::vector<std::vector<double>> orig, std::vector<std::v
 	}
 }
 
-void blur::CreateGauss(std::vector<std::vector<double>>& pic, int r_matr, double sig)
+void CreateGauss(std::vector<std::vector<double>>& pic, int r_matr, double sig)
 {
 	pic.resize(r_matr);
 	int center_gauss = (int)floor(r_matr / 2);
@@ -151,7 +151,7 @@ void blur::CreateGauss(std::vector<std::vector<double>>& pic, int r_matr, double
 	}
 }
 
-double blur::BlurScoreC(std::vector<std::vector<double>> pic, int r_matr, double sig1, double sig2)
+double BlurScoreC(std::vector<std::vector<double>> pic, int r_matr, double sig1, double sig2, double num_first_pic)
 {
 	if (sig1 > sig2)
 		swap(sig1, sig2);
@@ -163,8 +163,8 @@ double blur::BlurScoreC(std::vector<std::vector<double>> pic, int r_matr, double
 
 	CreateGauss(gauss1, r_matr, sig1);
 	CreateGauss(gauss2, r_matr, sig2);
-	Convolution(pic, blur1, gauss1, floor(r_matr / 2));
-	Convolution(pic, blur2, gauss2, floor(r_matr / 2));
+	Convolution(pic, blur1, gauss1, floor(r_matr / 2), num_first_pic);
+	Convolution(pic, blur2, gauss2, floor(r_matr / 2), num_first_pic);
 
 	double min1 = 0;
 	double min2 = 0;
@@ -185,11 +185,13 @@ double blur::BlurScoreC(std::vector<std::vector<double>> pic, int r_matr, double
 			sum += blur2[i][j] - blur1[i][j];
 		}
 	}
+	if (sum < 0)
+		sum = abs(sum);
 
 	return sum / (M * N);
 }
 
-void blur::CreateFullOrig(std::vector<std::vector<double>> orig, std::vector<std::vector<double>>& res, int g_row_col)
+void CreateFullOrig(std::vector<std::vector<double>> orig, std::vector<std::vector<double>>& res, int g_row_col, int& num_first_pic)
 {
 	int size_orig_row = orig.size();
 	int size_orig_col = orig[0].size();
@@ -304,8 +306,8 @@ void parametr::Main(std::vector<std::vector<double>> picture, double part_max, d
 
 void parametr::SetTeta(double part_max, double part_min)
 {
-	teta1 = part_min * maxP;
-	teta2 = part_max * maxP;
+	teta1 = part_min * (maxP - minP) + minP;
+	teta2 = part_max * (maxP - minP) + minP;
 }
 
 std::vector<std::vector<double>> parametr::GetParam()
@@ -331,4 +333,97 @@ double parametr::GetTeta1()
 double parametr::GetTeta2()
 {
 	return teta2;
+}
+
+void filter::CalcResult(std::vector<std::vector<double>> blur_pic)
+{
+	int max_row = blur_pic.size() - 2 * num_first_pic;
+	int max_col = blur_pic[0].size() - 2 * num_first_pic;
+
+	res_pic.resize(max_row);
+	for (int m = 0; m < max_row; m++)
+	{
+		res_pic[m].resize(max_col);
+		for (int n = 0; n < max_col; n++)
+		{
+			for (int i = -3; i < 4; i++)
+			{
+				for (int j = -3; j < 4; j++)
+				{
+					res_pic[m][n] += blur_pic[m + num_first_pic + i][n + num_first_pic + j] * h[m * max_col + n][i + 3][j + 3];
+				}
+			}
+		}
+	}
+}
+
+void filter::CalcH(double teta1, double teta2, std::vector<std::vector<double>> param)
+{
+	int max_row = param.size();
+	int max_col = param[0].size();
+	int size_h = 7;
+
+	h.resize(max_row * max_col);
+	double g = 0;
+	double a = 0;
+	double b = 0;
+
+	for (int m = 0; m < max_row; m++)
+	{
+		for (int n = 0; n < max_col; n++)
+		{
+			if (param[m][n] < teta1)
+			{
+				g = 0.5; a = 1; b = 0;
+			}
+			else
+				if (param[m][n] > teta2)
+				{
+					g = 0; a = 1. / 3.; b = a;
+				}
+				else
+				{
+					g = 1; a = 1. / 3.; b = a;
+				}
+
+			h[m * max_col + n].resize(size_h);
+			h[m * max_col + n][0].insert(h[m * max_col + n][0].begin(), { -g * b, -g * a, -g * b, 0, -g * b, -g * a, -g * b });
+			h[m * max_col + n][1].insert(h[m * max_col + n][1].begin(), h[m * max_col + n][0].begin(), h[m * max_col + n][0].end());
+			h[m * max_col + n][2].insert(h[m * max_col + n][2].begin(), { -g * b, -g * a, (1 + 3. * g) * b, (1 + 4. * g) * a, (1 + 3. * g) * b, -g * a, -g * b });
+			h[m * max_col + n][3].insert(h[m * max_col + n][3].begin(), { 0., 0., (1 + 4. * g) * b, (1 + 4. * g) * a, (1 + 4. * g) * b, 0., 0. });
+			h[m * max_col + n][4].insert(h[m * max_col + n][4].begin(), { -g * b, -g * a, (1 + 3. * g) * b, (1 + 4. * g) * a, (1 + 3. * g) * b, -g * a, -g * b });
+			h[m * max_col + n][5].insert(h[m * max_col + n][5].begin(), h[m * max_col + n][0].begin(), h[m * max_col + n][0].end());
+			h[m * max_col + n][6].insert(h[m * max_col + n][6].begin(), h[m * max_col + n][0].begin(), h[m * max_col + n][0].end());
+		}
+	}
+}
+
+void filter::Main(std::vector<std::vector<double>> blur_pic, double teta1, double teta2, std::vector<std::vector<double>> param, double first_pixel, int g_row_col, double s1, double s2)
+{
+	if (!res_pic.empty())
+		res_pic.clear();
+	if (!h.empty())
+		h.clear();
+	num_first_pic = first_pixel;
+	CalcH(teta1, teta2, param);
+	CalcResult(blur_pic);
+	scoreRQfilter = BlurScoreRQ(res_pic);
+	vector<vector<double>> res_pic_cond;
+	CreateFullOrig(res_pic, res_pic_cond, g_row_col, num_first_pic);
+	scoreCfilter = BlurScoreC(res_pic, g_row_col, s1, s2, num_first_pic);
+}
+
+std::vector<std::vector<double>> filter::GetResPic()
+{
+	return res_pic;
+}
+
+double filter::GetRQ()
+{
+	return scoreRQfilter;
+}
+
+double filter::GetC()
+{
+	return scoreCfilter;
 }
