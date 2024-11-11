@@ -120,8 +120,6 @@ void Convolution(std::vector<std::vector<double>> orig, std::vector<std::vector<
 	int max_h = 2 * area_blur + 1;
 	res.resize(max_row);
 
-	vector<double> first(max_h);
-	vector<double> second(max_h);
 	for (int i = 0; i < max_row; i++) //свертка ориг. с гауссом
 	{
 		res[i].resize(max_col);
@@ -140,6 +138,7 @@ void CreateGauss(std::vector<std::vector<double>>& pic, int r_matr, double sig)
 {
 	pic.resize(r_matr);
 	int center_gauss = (int)floor(r_matr / 2);
+	double sum = 0.;
 
 	for (int i = 0; i < r_matr; i++) //создание гауссиана
 	{
@@ -147,6 +146,14 @@ void CreateGauss(std::vector<std::vector<double>>& pic, int r_matr, double sig)
 		for (int j = 0; j < r_matr; j++)
 		{
 			pic[i][j] = EXP_G(j, r_matr, sig) * EXP_G(i, r_matr, sig);
+			sum += pic[i][j];
+		}
+	}
+	for (int i = 0; i < r_matr; i++) //нормировка
+	{
+		for (int j = 0; j < r_matr; j++)
+		{
+			pic[i][j] /= sum;
 		}
 	}
 }
@@ -351,6 +358,8 @@ void filter::CalcResult(std::vector<std::vector<double>> blur_pic)
 				for (int j = -3; j < 4; j++)
 				{
 					res_pic[m][n] += blur_pic[m + num_first_pic + i][n + num_first_pic + j] * h[m * max_col + n][i + 3][j + 3];
+					if (res_pic[m][n] < 0)
+						res_pic[m][n] = 0;
 				}
 			}
 		}
