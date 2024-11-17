@@ -106,7 +106,7 @@ void blur::Main(std::vector<std::vector<double>> orig, int g_row_col, double sig
 	if (g_row_col < max_razm)
 	{
 		CreateFullOrig(blur_pic, blur_pic_cond, max_razm, num_first_pic);
-		num_first_pic = 3;
+		num_first_pic = (int)floor(max_razm / 2);
 	}
 	else
 		CreateFullOrig(blur_pic, blur_pic_cond, g_row_col, num_first_pic);
@@ -119,16 +119,17 @@ void Convolution(std::vector<std::vector<double>> orig, std::vector<std::vector<
 	int max_col = orig[0].size() - 2 * num_first_pic;
 	int max_h = 2 * area_blur + 1;
 	res.resize(max_row);
-
 	for (int i = 0; i < max_row; i++) //свертка ориг. с гауссом
 	{
 		res[i].resize(max_col);
 		for (int j = 0; j < max_col; j++)
 		{
-			for (int k = -area_blur; k < area_blur; k++)
+			for (int k = -area_blur; k <= area_blur; k++)
 			{
 				//res[i][j] = inner_product(orig[i + k].begin() + j, orig[i + k].begin() + j + max_h, my_h[k].begin(), 0.); //произведение векторов
-				res[i][j] = inner_product(orig[i + num_first_pic + k].begin() + j + num_first_pic - area_blur, orig[i + num_first_pic + k].begin() + j + num_first_pic - area_blur + max_h, my_h[k + area_blur].begin(), 0.); //произведение векторов
+				//res[i][j] = inner_product(orig[i + num_first_pic + k].begin() + j + num_first_pic - area_blur, orig[i + num_first_pic + k].begin() + j + num_first_pic - area_blur + max_h, my_h[k + area_blur].begin(), res[i][j]); //произведение векторов
+				for (int h = -area_blur; h <= area_blur; h++)
+					res[i][j] += orig[i + num_first_pic + k][j + num_first_pic + h] * my_h[k + area_blur][h + area_blur];
 			}
 		}
 	}
@@ -145,7 +146,7 @@ void CreateGauss(std::vector<std::vector<double>>& pic, int r_matr, double sig)
 		pic[i].resize(r_matr);
 		for (int j = 0; j < r_matr; j++)
 		{
-			pic[i][j] = EXP_G(j, r_matr, sig) * EXP_G(i, r_matr, sig);
+			pic[i][j] = EXP_G(j, center_gauss, sig) * EXP_G(i, center_gauss, sig);
 			sum += pic[i][j];
 		}
 	}
@@ -178,11 +179,11 @@ double BlurScoreC(std::vector<std::vector<double>> pic, int r_matr, double sig1,
 	double max1 = 0;
 	double max2 = 0;
 
-	int M = pic.size() - (r_matr - 1);
-	int N = pic[0].size() - (r_matr - 1);
+	int M = pic.size() - 2 * num_first_pic;
+	int N = pic[0].size() - 2 * num_first_pic;
 
-	normirovka(blur1, max1, min1);
-	normirovka(blur2, max2, min2);
+	//normirovka(blur1, max1, min1);
+	//normirovka(blur2, max2, min2);
 
 	double sum = 0;
 	for (int i = 0; i < M; i++)
@@ -358,10 +359,14 @@ void filter::CalcResult(std::vector<std::vector<double>> blur_pic)
 				for (int j = -3; j < 4; j++)
 				{
 					res_pic[m][n] += blur_pic[m + num_first_pic + i][n + num_first_pic + j] * h[m * max_col + n][i + 3][j + 3];
-					if (res_pic[m][n] < 0)
-						res_pic[m][n] = 0;
 				}
 			}
+			res_pic[m][n] /= 3.;
+			if (res_pic[m][n] < 0)
+				res_pic[m][n] = 0;
+			else
+				if (res_pic[m][n] > 255)
+					res_pic[m][n] = 255;
 		}
 	}
 }
@@ -373,9 +378,36 @@ void filter::CalcH(double teta1, double teta2, std::vector<std::vector<double>> 
 	int size_h = 7;
 
 	h.resize(max_row * max_col);
-	double g = 0;
-	double a = 0;
-	double b = 0;
+
+	vector<vector<double>> h1({
+		{ 0, -0.5, 0, 0, 0, -0.5, 0 },
+		{ 0, -0.5, 0, 0, 0, -0.5, 0 },
+		{ 0, -0.5, 0, 3, 0, -0.5, 0 },
+		{ 0, 0, 0, 3, 0, 0, 0 },
+		{ 0, -0.5, 0, 3, 0, -0.5, 0 },
+		{ 0, -0.5, 0, 0, 0, -0.5, 0 },
+		{ 0, -0.5, 0, 0, 0, -0.5, 0 }
+		});
+
+	vector<vector<double>> h2({
+		{ -1. / 3., -1. / 3., -1. / 3., 0, -1. / 3., -1. / 3., -1. / 3. },
+		{ -1. / 3., -1. / 3., -1. / 3., 0, -1. / 3., -1. / 3., -1. / 3. },
+		{ -1. / 3., -1. / 3., 4. / 3., 5. / 3., 4. / 3., -1. / 3., -1. / 3. },
+		{ 0, 0, 5. / 3., 5. / 3., 5. / 3., 0, 0 },
+		{ -1. / 3., -1. / 3., 4. / 3., 5. / 3., 4. / 3., -1. / 3., -1. / 3. },
+		{ -1. / 3., -1. / 3., -1. / 3., 0, -1. / 3., -1. / 3., -1. / 3. },
+		{ -1. / 3., -1. / 3., -1. / 3., 0, -1. / 3., -1. / 3., -1. / 3. }
+		});
+
+	vector<vector<double>> h3({
+		{ 0, 0, 0, 0, 0, 0, 0 },
+		{ 0, 0, 0, 0, 0, 0, 0 },
+		{ 0, 0, 1. / 3., 1. / 3., 1. / 3., 0, 0 },
+		{ 0, 0, 1. / 3., 1. / 3., 1. / 3., 0, 0 },
+		{ 0, 0, 1. / 3., 1. / 3., 1. / 3., 0, 0 },
+		{ 0, 0, 0, 0, 0, 0, 0 },
+		{ 0, 0, 0, 0, 0, 0, 0 }
+		});
 
 	for (int m = 0; m < max_row; m++)
 	{
@@ -383,26 +415,26 @@ void filter::CalcH(double teta1, double teta2, std::vector<std::vector<double>> 
 		{
 			if (param[m][n] < teta1)
 			{
-				g = 0.5; a = 1; b = 0;
+				h[m * max_col + n] = h1;
 			}
 			else
 				if (param[m][n] > teta2)
 				{
-					g = 0; a = 1. / 3.; b = a;
+					h[m * max_col + n] = h3;
 				}
 				else
 				{
-					g = 1; a = 1. / 3.; b = a;
+					h[m * max_col + n] = h2;
 				}
 
-			h[m * max_col + n].resize(size_h);
-			h[m * max_col + n][0].insert(h[m * max_col + n][0].begin(), { -g * b, -g * a, -g * b, 0, -g * b, -g * a, -g * b });
-			h[m * max_col + n][1].insert(h[m * max_col + n][1].begin(), h[m * max_col + n][0].begin(), h[m * max_col + n][0].end());
-			h[m * max_col + n][2].insert(h[m * max_col + n][2].begin(), { -g * b, -g * a, (1 + 3. * g) * b, (1 + 4. * g) * a, (1 + 3. * g) * b, -g * a, -g * b });
-			h[m * max_col + n][3].insert(h[m * max_col + n][3].begin(), { 0., 0., (1 + 4. * g) * b, (1 + 4. * g) * a, (1 + 4. * g) * b, 0., 0. });
-			h[m * max_col + n][4].insert(h[m * max_col + n][4].begin(), { -g * b, -g * a, (1 + 3. * g) * b, (1 + 4. * g) * a, (1 + 3. * g) * b, -g * a, -g * b });
-			h[m * max_col + n][5].insert(h[m * max_col + n][5].begin(), h[m * max_col + n][0].begin(), h[m * max_col + n][0].end());
-			h[m * max_col + n][6].insert(h[m * max_col + n][6].begin(), h[m * max_col + n][0].begin(), h[m * max_col + n][0].end());
+			//h[m * max_col + n].resize(size_h);
+			//h[m * max_col + n][0].insert(h[m * max_col + n][0].begin(), { -g * b, -g * a, -g * b, 0, -g * b, -g * a, -g * b });
+			//h[m * max_col + n][1].insert(h[m * max_col + n][1].begin(), h[m * max_col + n][0].begin(), h[m * max_col + n][0].end());
+			//h[m * max_col + n][2].insert(h[m * max_col + n][2].begin(), { -g * b, -g * a, (1 + 3. * g) * b, (1 + 4. * g) * a, (1 + 3. * g) * b, -g * a, -g * b });
+			//h[m * max_col + n][3].insert(h[m * max_col + n][3].begin(), { 0., 0., (1 + 4. * g) * b, (1 + 4. * g) * a, (1 + 4. * g) * b, 0., 0. });
+			//h[m * max_col + n][4].insert(h[m * max_col + n][4].begin(), { -g * b, -g * a, (1 + 3. * g) * b, (1 + 4. * g) * a, (1 + 3. * g) * b, -g * a, -g * b });
+			//h[m * max_col + n][5].insert(h[m * max_col + n][5].begin(), h[m * max_col + n][0].begin(), h[m * max_col + n][0].end());
+			//h[m * max_col + n][6].insert(h[m * max_col + n][6].begin(), h[m * max_col + n][0].begin(), h[m * max_col + n][0].end());
 		}
 	}
 }
